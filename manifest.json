@@ -1,0 +1,35 @@
+{
+  "name": "KutFast - Transmisión Rápida",
+  "short_name": "KutFast",
+  "description": "Publicación ágil y directa para podcasts en KutPod",
+  "start_url": "index.php?page=dashboard",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "categories": ["news", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "index.php?page=publish",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "description",
+      "files": [
+        {
+          "name": "audio_file",
+          "accept": ["audio/*", ".mp3", ".m4a", ".wav", ".flac", ".ogg", ".opus", ".webm"]
+        }
+      ]
+    }
+  }
+}

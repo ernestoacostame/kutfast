@@ -1,0 +1,84 @@
+server {
+    listen 80;
+    server_name ernestoacosta.me;
+    return 301 https://ernestoacosta.me$request_uri;
+}
+
+# HTTPS Server
+server {
+    listen 443 ssl;
+    server_name ernestoacosta.me;
+
+    ssl_certificate /etc/letsencrypt/live/ernestoacosta.me/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ernestoacosta.me/privkey.pem;
+    ssl_session_cache builtin:1000 shared:SSL:10m;
+    ssl_session_timeout 5m;
+    ssl_protocols TLSv1.2 TLSv1.3; # Actualizado para mayor seguridad
+    ssl_ciphers 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256';
+    ssl_prefer_server_ciphers on;
+
+    gzip on;
+    gzip_comp_level 9;
+    gzip_http_version 1.0;
+    gzip_proxied any;
+    gzip_min_length 1100;
+    gzip_buffers 16 8k;
+    gzip_types text/plain text/css application/x-javascript application/xml application/xml+rss text/javascript js;
+    gzip_disable "MSIE [1-6].(?!.*SV1)";
+    gzip_vary on;
+
+    # Configuración de Directorio y Archivos de Índice
+    root /var/www/html/ernestoacosta/;
+    index index.php index.html index.htm;
+
+    # Tamaño máximo para subida de archivos (útil para audios/podcasts)
+    client_max_body_size 520M;
+
+    # Headers de seguridad
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    access_log /var/log/nginx/ernestoacosta_access.log;
+    error_log  /var/log/nginx/ernestoacosta_error.log;
+
+    # -------------------------------------------------------
+    # KutPod Publisher — /kutfast/
+    # -------------------------------------------------------
+
+    # Manejo de la subcarpeta /kutfast/ y sus rutas amigables
+    location /kutfast/ {
+        index index.php;
+        try_files $uri $uri/ /kutfast/index.php?$args;
+    }
+
+    # Bloquear archivos internos sensibles de KutFast
+    location ~ ^/kutfast/(config|auth|kutpod|drafts_store|templates_store|podcasts_store)\.php$ {
+        deny all;
+        return 404;
+    }
+
+    # Bloquear acceso directo a JSON y carpeta temporal
+    location ~ ^/kutfast/.*\.json$ { deny all; return 404; }
+    location ^~ /kutfast/tmp/ { deny all; return 404; }
+
+    # Procesamiento de PHP (General para todo el sitio)
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+
+        # Ajustes para procesos largos (Uploads de audio)
+        fastcgi_read_timeout 600;
+        fastcgi_send_timeout 600;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+    }
+
+    # Archivos estáticos y raíz del sitio
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
